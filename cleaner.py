@@ -92,9 +92,22 @@ def delete_item(base_url, href, username, password):
 
     return (response.status_code == 204, response.status_code, response.text)
 
-def purge_files(base_url, username, password, patterns, min_age, threshold, dry_run, force, verbose):
+def purge_files(base_url, username, password, patterns, min_age, threshold, dry_run, force, verbose, progress):
     """
-    Lists and optionally purges files from the trash bin matching any of the specified patterns.
+    Deletes files from the trash bin matching any of the specified patterns.
+
+    Args:
+        matching_items (list): List of items to process.
+        base_url (str): Base URL for the WebDAV server.
+        username (str): Username for authentication.
+        password (str): Password for authentication.
+        patterns (list): Regex patterns for filename matching.
+        min_age (int): Minimum age in days of the file.
+        threshold (int): Only delete files if less than this amount of matching files is found (unless forced).
+        dry_run (bool): If True, don't actually delete files.
+        force (bool): Delete files regardless of how many were found (ignore threshold)
+        verbose (int): Verbosity level.
+        progress (bool): If True, display a progress bar.
     """
     if verbose:
         print("Listing trashbin contents...")
@@ -135,14 +148,32 @@ def purge_files(base_url, username, password, patterns, min_age, threshold, dry_
             print(f"- {filename}")
         return
 
+    # Set up tqdm progress bar if requested (can't combine with dry run)
+    if progress and not dry_run:
+        # Only import tqdm when actually needed, so it does not become a hard dependency
+        # Error out if it cannot be loaded, with a hopefully helpful hint
+        try:
+            from tqdm import tqdm
+        except:
+            print("ERROR: Progress bar requires 'tqdm' python module.\n\nTry installing it:\n  - apt install python3-tqdm (Debian, Ubuntu)\n  - dnf install python3-tqdm (Fedora, Red Hat)\n  - zypper install python3-tqdm (SUSE)\n  - pip install tqdm");
+            return
+
+        matching_items = tqdm(matching_items, desc="Processing items", unit="file", ascii=' █', dynamic_ncols=True)
+
+        # Disable verbose when requesting progress bar, below prints would interfere with output
+        verbose = 0
+
     if verbose:
         print(f"Deleting {len(matching_items)} matching items.")
     for item in matching_items:
         href = unquote(item["href"])
-        filename = href.split("/")[-1]
         if not dry_run:
             if verbose >= 2:
-                print(f"Deleting {filename}...")
+                print(f"Deleting {item['filename']}...")
+
+            # If progress bar was requested, update the bar to show the current file name being deleted.
+            if progress:
+                matching_items.set_description(f"{item['filename'][:40]:40}")
 
             (success, status_code, response_text) = delete_item(base_url, href, username, password)
             if success:
@@ -151,23 +182,22 @@ def purge_files(base_url, username, password, patterns, min_age, threshold, dry_
             else:
                 print(f"Failed to delete {href}: {status_code}, {response_text}")
         else:
-            print(f"Dry run - not deleting {filename}")
+            print(f"Dry run - not deleting {item['filename']}")
 
 def main():
     global args
 
     parser = argparse.ArgumentParser(description="Purge files matching patterns from Nextcloud trash bin.")
     parser.add_argument("files", metavar="files", nargs="+", help="One or more INI configuration files to process in order.")
-    parser.add_argument("-D", "--dry-run", action="store_true", help="Perform a dry run without deleting files.")
+    parser.add_argument("-D", "--dry-run", action="store_true", help="Perform a dry run without deleting files (disables progress bar).")
     parser.add_argument("-F", "--force", action="store_true", help="Force deletion even when amount of files is over threshold.")
-    parser.add_argument("-v", "--verbose", help="Enable verbose output.", action="count", default=0)
+    parser.add_argument("-v", "--verbose", action="count", help="Enable verbose output.", default=0)
+    parser.add_argument("-C", "--progress", action="store_true", help="Show progress bar (disables verbose output).")
 
     args = parser.parse_args()
 
-    verbose = args.verbose
-
     for config_file in args.files:
-        if verbose:
+        if args.verbose:
             print(f"Processing configuration file: {config_file}")
         try:
             config = read_config(config_file)
@@ -197,7 +227,7 @@ def main():
                 continue
 
             # Print configuration summary
-            if verbose:
+            if args.verbose:
                 print("Purging files matching:")
                 print(f" - File name patterns: {patterns}")
                 if not args.force:
@@ -205,7 +235,7 @@ def main():
                 print(f" - Minimum age of {min_age} days")
 
             # Purge the files matching the requirements
-            purge_files(base_url, username, password, patterns, min_age, threshold, args.dry_run, args.force, verbose)
+            purge_files(base_url, username, password, patterns, min_age, threshold, args.dry_run, args.force, args.verbose, args.progress)
 
         except Exception as e:
             print(f"Error processing {config_file}: {e}")
