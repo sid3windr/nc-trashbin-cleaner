@@ -158,8 +158,8 @@ def main():
 
     parser = argparse.ArgumentParser(description="Purge files matching patterns from Nextcloud trash bin.")
     parser.add_argument("files", metavar="files", nargs="+", help="One or more INI configuration files to process in order.")
-    parser.add_argument("--dry-run", action="store_true", help="Perform a dry run without deleting files.")
-    parser.add_argument("--force", action="store_true", help="Force deletion even when amount of files is over threshold.")
+    parser.add_argument("-D", "--dry-run", action="store_true", help="Perform a dry run without deleting files.")
+    parser.add_argument("-F", "--force", action="store_true", help="Force deletion even when amount of files is over threshold.")
     parser.add_argument("-v", "--verbose", help="Enable verbose output.", action="count", default=0)
 
     args = parser.parse_args()
