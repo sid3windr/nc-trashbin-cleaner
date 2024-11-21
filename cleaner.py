@@ -89,22 +89,23 @@ def delete_item(trashbin_url, href, username, password):
     """
     delete_url = f"{trashbin_url}{href}"
     response = requests.request("DELETE", delete_url, auth=(username, password))
-    if response.status_code in (204, 404):
-        print(f"Deleted: {href}")
-    else:
-        print(f"Failed to delete {href}: {response.status_code}, {response.text}")
 
-def purge_files(trashbin_url, username, password, patterns, min_age, threshold):
+    return (response.status_code in (204, 404), response.status_code, response.text)
+
+def purge_files(trashbin_url, username, password, patterns, min_age, threshold, dry_run, force, verbose):
     """
     Lists and optionally purges files from the trash bin matching any of the specified patterns.
     """
-    print("Listing trashbin contents...")
+    if verbose:
+        print("Listing trashbin contents...")
+
     items = list_trashbin(trashbin_url, username, password)
     if not items:
         print("Trashbin is empty or failed to retrieve contents.")
         return
 
-    print(f"Found {len(items)} items in the trashbin.")
+    if verbose:
+        print(f"Found {len(items)} items in the trashbin.")
 
     # Combine all patterns into a single regex
     combined_pattern = "|".join(f"({pattern})" for pattern in patterns)
@@ -114,11 +115,13 @@ def purge_files(trashbin_url, username, password, patterns, min_age, threshold):
     for item in items:
         if re.match(combined_pattern, item["filename"]):
             if item['age_in_days'] is not None and item["age_in_days"] >= min_age:
-                #print(f"{item['getlastmodified']} is older than {min_age} ({item['age_in_days']} days)")
+                if verbose >= 3:
+                    print(f"{item['getlastmodified']} is older than {min_age} ({item['age_in_days']} days)")
                 matching_items.append(item)
 
-    print(f"{len(matching_items)} items match the patterns {patterns} with minimum age of {min_age}.")
-    if len(matching_items) > threshold:
+    if verbose:
+        print(f"{len(matching_items)} items match the patterns {patterns} with minimum age of {min_age} days.")
+    if not force and len(matching_items) > threshold:
         print(f"Threshold of {threshold} exceeded. Aborting operation.")
         print("Files that would be deleted:")
         for item in matching_items:
@@ -127,13 +130,23 @@ def purge_files(trashbin_url, username, password, patterns, min_age, threshold):
             print(f"- {filename}")
         return
 
-    print(f"Deleting up to {threshold} matching items.")
+    if verbose:
+        print(f"Deleting {len(matching_items)} matching items.")
     for item in matching_items:
         href = unquote(item["href"])
         filename = href.split("/")[-1]
-        print(f"Deleting {filename}...")
-        # FIXME dry-run
-        delete_item(trashbin_url, href, username, password)
+        if not dry_run:
+            if verbose >= 2:
+                print(f"Deleting {filename}...")
+
+            (success, status_code, response_text) = delete_item(trashbin_url, href, username, password)
+            if success:
+                if verbose:
+                    print(f"Deleted: {href}")
+            else:
+                print(f"Failed to delete {href}: {status_code}, {response_text}")
+        else:
+            print(f"Dry run - not deleting {filename}")
 
 def main():
     global args
@@ -141,12 +154,16 @@ def main():
     parser = argparse.ArgumentParser(description="Purge files matching patterns from Nextcloud trash bin.")
     parser.add_argument("files", metavar="files", nargs="+", help="One or more INI configuration files to process in order.")
     parser.add_argument("--dry-run", action="store_true", help="Perform a dry run without deleting files.")
+    parser.add_argument("--force", action="store_true", help="Force deletion even when amount of files is over threshold.")
     parser.add_argument("-v", "--verbose", help="Enable verbose output.", action="count", default=0)
 
     args = parser.parse_args()
 
+    verbose = args.verbose
+
     for config_file in args.files:
-        print(f"Processing configuration file: {config_file}")
+        if verbose:
+            print(f"Processing configuration file: {config_file}")
         try:
             config = read_config(config_file)
             nextcloud_config = config["Nextcloud"]
@@ -176,11 +193,19 @@ def main():
 
             # Construct the trashbin URL
             trashbin_url = construct_trashbin_url(base_url, username)
-            if args.verbose >= 2:
+            if verbose >= 2:
                 print(f"Constructed trashbin URL: {trashbin_url}")
 
-            print(f"Purging files matching patterns: {patterns} with threshold: {threshold}.")
-            purge_files(trashbin_url, username, password, patterns, min_age, threshold)
+            # Print configuration summary
+            if verbose:
+                print("Purging files matching:")
+                print(f" - File name patterns: {patterns}")
+                if not args.force:
+                    print(f" - Maximum threshold of {threshold} files")
+                print(f" - Minimum age of {min_age} days")
+
+            # Purge the files matching the requirements
+            purge_files(trashbin_url, username, password, patterns, min_age, threshold, args.dry_run, args.force, verbose)
 
         except Exception as e:
             print(f"Error processing {config_file}: {e}")
