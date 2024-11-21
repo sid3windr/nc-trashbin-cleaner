@@ -83,21 +83,26 @@ def list_trashbin(trashbin_url, username, password):
 
     return items
 
-def delete_item(trashbin_url, href, username, password):
+def delete_item(base_url, href, username, password):
     """
     Deletes an item from the trash bin using its WebDAV href.
     """
-    delete_url = f"{trashbin_url}{href}"
+    delete_url = f"{base_url}{href}"
     response = requests.request("DELETE", delete_url, auth=(username, password))
 
-    return (response.status_code in (204, 404), response.status_code, response.text)
+    return (response.status_code == 204, response.status_code, response.text)
 
-def purge_files(trashbin_url, username, password, patterns, min_age, threshold, dry_run, force, verbose):
+def purge_files(base_url, username, password, patterns, min_age, threshold, dry_run, force, verbose):
     """
     Lists and optionally purges files from the trash bin matching any of the specified patterns.
     """
     if verbose:
         print("Listing trashbin contents...")
+
+    # Construct the trashbin URL
+    trashbin_url = construct_trashbin_url(base_url, username)
+    if verbose >= 2:
+        print(f"Constructed trashbin URL: {trashbin_url}")
 
     items = list_trashbin(trashbin_url, username, password)
     if not items:
@@ -139,7 +144,7 @@ def purge_files(trashbin_url, username, password, patterns, min_age, threshold, 
             if verbose >= 2:
                 print(f"Deleting {filename}...")
 
-            (success, status_code, response_text) = delete_item(trashbin_url, href, username, password)
+            (success, status_code, response_text) = delete_item(base_url, href, username, password)
             if success:
                 if verbose:
                     print(f"Deleted: {href}")
@@ -191,11 +196,6 @@ def main():
                 print(f"No patterns specified in {config_file}. Skipping.")
                 continue
 
-            # Construct the trashbin URL
-            trashbin_url = construct_trashbin_url(base_url, username)
-            if verbose >= 2:
-                print(f"Constructed trashbin URL: {trashbin_url}")
-
             # Print configuration summary
             if verbose:
                 print("Purging files matching:")
@@ -205,7 +205,7 @@ def main():
                 print(f" - Minimum age of {min_age} days")
 
             # Purge the files matching the requirements
-            purge_files(trashbin_url, username, password, patterns, min_age, threshold, args.dry_run, args.force, verbose)
+            purge_files(base_url, username, password, patterns, min_age, threshold, args.dry_run, args.force, verbose)
 
         except Exception as e:
             print(f"Error processing {config_file}: {e}")
