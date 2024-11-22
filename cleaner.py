@@ -60,9 +60,6 @@ def list_trashbin(trashbin_url, username, password):
         if not href:
             continue
 
-        # Derive filename from href
-        filename = unquote(href.split("/")[-1])
-
         # Extract properties
         properties = {}
         for prop in response.findall('.//d:prop', namespaces):
@@ -70,9 +67,11 @@ def list_trashbin(trashbin_url, username, password):
                 tag_name = child.tag.split("}")[-1]  # Strip namespace
                 properties[tag_name] = child.text
 
-        # Add href and filename to properties
+        # Add href to properties
         properties['href'] = href
-        properties['filename'] = filename
+
+        # Derive filename from href and add to properties
+        properties['filename'] = unquote(href.split("/")[-1])
 
         # Parse the getlastmodified date to calculate the age in days
         if 'getlastmodified' in properties and properties['getlastmodified']:
@@ -91,7 +90,7 @@ def list_trashbin(trashbin_url, username, password):
                 properties['age_in_days'] = None
         else:
             properties['age_in_days'] = None
-            
+
         items.append(properties)
 
     return items
@@ -155,11 +154,13 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
                     matching_section_items[pattern.get("pattern")].append(item)
                     # Remove the file from the list of files to check for other patterns, as it's already selected for deletion
                     items.remove(item)
-        if verbose:
+        if verbose >=2:
             print(f"{len(matching_section_items[pattern.get('pattern')])} items match the patterns {pattern.get('pattern')} with minimum age of {min_age} days.")
 
     # Flatten section-separated dict of matching items into a single list
     matching_items = [item for sublist in matching_section_items.values() for item in sublist]
+    if verbose:
+        print(f"{len(matching_items)} items match the configured patterns.")
 
     if not force and len(matching_items) > threshold:
         print(f"Threshold of {threshold} exceeded. Aborting operation.")
