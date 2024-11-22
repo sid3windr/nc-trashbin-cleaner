@@ -45,6 +45,36 @@ This configuration will:
 * delete files matching `timeCheck*.txt` after they've been deleted for 30 days.
 * delete files matching `^.Trashed-` right away.
 
+# Command line usage
+
+## INI files
+
+The program expects one or more INI files as a parameter, and will run
+through them in sequence.
+
+## `-v` (`--verbose`)
+
+Output some text about what the program is doing. By default, the program is
+completely quiet unless there is a problem. This parameter can be repeated for
+more verbosity.
+
+## `-C` (`--progress`)
+
+Show a nice progress bar (if `tqdm` is available) instead of other output,
+showing amount of files deleted, total, and a completion time estimate.
+
+## `-D` (`--dry-run`)
+
+Go through the entire process, but don't actually delete the files. Will
+disable the progress bar.
+
+## `-F` (`--force`)
+
+Ignore the threshold configured in the INI file. Under normal circumstances,
+you would configure a failsafe in case the program would delete too many files
+(i.e. you made a mistake in your regex). Use this switch to run regardless
+of the amount. Probably useful on your first run!
+
 # Caveats
 
 WebDAV can be very slow. There are numerous bugs filed at Nextcloud, many to
