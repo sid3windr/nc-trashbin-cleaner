@@ -80,9 +80,8 @@ of the amount. Probably useful on your first run!
 WebDAV can be very slow. There are numerous bugs filed at Nextcloud, many to
 do with the amount of authentication tokens, but with mine all cleaned up,
 it still takes 4-7 seconds for a WebDAV delete to go through, which is
-possibly related to the amount of files in my trashbin, or not using a
-memcache backend. Your initial script run may take hours, depending on how
-many files need to be cleaned up.
+possibly related to the amount of files in my trashbin. Your initial script
+run may take hours, depending on how many files need to be cleaned up.
 
 # Development
 
