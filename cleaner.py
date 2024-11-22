@@ -166,9 +166,7 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
         print(f"Threshold of {threshold} exceeded. Aborting operation.")
         print("Files that would be deleted:")
         for item in matching_items:
-            href = unquote(item["href"])
-            filename = href.split("/")[-1]
-            print(f"- {filename}")
+            print(f"- {item['filename']}")
         return
 
     # Set up tqdm progress bar if requested (can't combine with dry run)
