@@ -27,6 +27,7 @@ from urllib.parse import unquote
 from xml.etree import ElementTree as ET
 from datetime import datetime, timezone
 
+
 def read_config(config_file):
     """Read the INI configuration file."""
     config = configparser.ConfigParser()
@@ -35,9 +36,11 @@ def read_config(config_file):
         raise ValueError("Missing 'Nextcloud' section in the configuration file.")
     return config
 
+
 def construct_trashbin_url(base_url, username):
     """Construct the full WebDAV trash bin URL using the base URL and username."""
     return f"{base_url}/remote.php/dav/trashbin/{username}/trash"
+
 
 def list_trashbin(trashbin_url, username, password):
     """
@@ -96,12 +99,14 @@ def list_trashbin(trashbin_url, username, password):
 
     return items
 
+
 def delete_item(base_url, href, username, password):
     """Delete an item using its WebDAV href."""
     delete_url = f"{base_url}{href}"
     response = requests.request("DELETE", delete_url, auth=(username, password))
 
     return (response.status_code == 204, response.status_code, response.text)
+
 
 def purge_files(base_url, username, password, patterns, default_min_age, threshold, dry_run, force, verbose, progress):
     """
@@ -153,7 +158,7 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
                     matching_section_items[pattern.get("pattern")].append(item)
                     # Remove the file from the list of files to check for other patterns, as it's already selected for deletion
                     items.remove(item)
-        if verbose >=2:
+        if verbose >= 2:
             print(f"{len(matching_section_items[pattern.get('pattern')])} items match the patterns {pattern.get('pattern')} with minimum age of {min_age} days.")
 
     # Flatten section-separated dict of matching items into a single list
@@ -174,8 +179,13 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
         # Error out if it cannot be loaded, with a hopefully helpful hint
         try:
             from tqdm import tqdm
-        except:
-            print("ERROR: Progress bar requires 'tqdm' python module.\n\nTry installing it:\n  - apt install python3-tqdm (Debian, Ubuntu)\n  - dnf install python3-tqdm (Fedora, Red Hat)\n  - zypper install python3-tqdm (SUSE)\n  - pip install tqdm");
+        except ModuleNotFoundError:
+            print("ERROR: Progress bar requires 'tqdm' python module.\n")
+            print("Try installing it:")
+            print("  - apt install python3-tqdm (Debian, Ubuntu)")
+            print("  - dnf install python3-tqdm (Fedora, Red Hat)")
+            print("  - zypper install python3-tqdm (SUSE)")
+            print("  - pip install tqdm")
             return
 
         matching_items = tqdm(matching_items, desc="Processing items", unit="file", ascii=' █', dynamic_ncols=True)
@@ -204,6 +214,7 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
                 print(f"Failed to delete {href}: {status_code}, {response_text}")
         else:
             print(f"Dry run - not deleting {item['filename']}")
+
 
 def main():
     """Run main program code."""
@@ -264,6 +275,7 @@ def main():
 
         except Exception as e:
             print(f"Error processing {config_file}: {e}")
+
 
 if __name__ == "__main__":
     main()
