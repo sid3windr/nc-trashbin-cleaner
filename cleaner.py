@@ -125,6 +125,21 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
         verbose (int): Verbosity level.
         progress (bool): If True, display a progress bar.
     """
+    # Set up tqdm progress bar if requested (can't combine with dry run)
+    if progress and not dry_run:
+        # Only import tqdm when actually needed, so it does not become a hard dependency
+        # Error out if it cannot be loaded, with a hopefully helpful hint
+        try:
+            from tqdm import tqdm
+        except ModuleNotFoundError:
+            print("ERROR: Progress bar requires 'tqdm' python module.\n")
+            print("Try installing it:")
+            print("  - apt install python3-tqdm (Debian, Ubuntu)")
+            print("  - dnf install python3-tqdm (Fedora, Red Hat)")
+            print("  - zypper install python3-tqdm (SUSE)")
+            print("  - pip install tqdm")
+            return
+
     if verbose:
         print("Listing trashbin contents...")
 
@@ -173,21 +188,8 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
             print(f"- {item['filename']}")
         return
 
-    # Set up tqdm progress bar if requested (can't combine with dry run)
+    # Convert list to tqdm if requested (can't combine with dry run)
     if progress and not dry_run:
-        # Only import tqdm when actually needed, so it does not become a hard dependency
-        # Error out if it cannot be loaded, with a hopefully helpful hint
-        try:
-            from tqdm import tqdm
-        except ModuleNotFoundError:
-            print("ERROR: Progress bar requires 'tqdm' python module.\n")
-            print("Try installing it:")
-            print("  - apt install python3-tqdm (Debian, Ubuntu)")
-            print("  - dnf install python3-tqdm (Fedora, Red Hat)")
-            print("  - zypper install python3-tqdm (SUSE)")
-            print("  - pip install tqdm")
-            return
-
         matching_items = tqdm(matching_items, desc="Processing items", unit="file", ascii=' █', dynamic_ncols=True)
 
         # Disable verbose when requesting progress bar, below prints would interfere with output
