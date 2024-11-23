@@ -1,19 +1,23 @@
 #!/usr/bin/python
 
-# Nextcloud Trashbin Cleaner.
-# Copyright (c) 2024 Tom Laermans.
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, version 3.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+Nextcloud Trashbin Cleaner.
+
+See README.md and the command line help for more information.
+Copyright (c) 2024 Tom Laermans.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
 
 import argparse
 import configparser
@@ -24,9 +28,7 @@ from xml.etree import ElementTree as ET
 from datetime import datetime, timezone
 
 def read_config(config_file):
-    """
-    Reads the INI configuration file.
-    """
+    """Read the INI configuration file."""
     config = configparser.ConfigParser()
     config.read(config_file)
     if "Nextcloud" not in config:
@@ -34,14 +36,13 @@ def read_config(config_file):
     return config
 
 def construct_trashbin_url(base_url, username):
-    """
-    Constructs the full WebDAV trash bin URL using the base URL and username.
-    """
+    """Construct the full WebDAV trash bin URL using the base URL and username."""
     return f"{base_url}/remote.php/dav/trashbin/{username}/trash"
 
 def list_trashbin(trashbin_url, username, password):
     """
-    Fetches the list of items in the Nextcloud trash bin using WebDAV.
+    Fetch the list of items in the Nextcloud trash bin using WebDAV.
+
     Returns a list of dictionaries with file details including synthesized filename.
     """
     response = requests.request("PROPFIND", trashbin_url, auth=(username, password), headers={"Depth": "1"})
@@ -96,9 +97,7 @@ def list_trashbin(trashbin_url, username, password):
     return items
 
 def delete_item(base_url, href, username, password):
-    """
-    Deletes an item from the trash bin using its WebDAV href.
-    """
+    """Delete an item using its WebDAV href."""
     delete_url = f"{base_url}{href}"
     response = requests.request("DELETE", delete_url, auth=(username, password))
 
@@ -106,7 +105,7 @@ def delete_item(base_url, href, username, password):
 
 def purge_files(base_url, username, password, patterns, default_min_age, threshold, dry_run, force, verbose, progress):
     """
-    Deletes files from the trash bin matching any of the specified patterns.
+    Delete files from the trash bin matching any of the specified patterns.
 
     Args:
         matching_items (list): List of items to process.
@@ -207,7 +206,7 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
             print(f"Dry run - not deleting {item['filename']}")
 
 def main():
-    """"Runs main program code"""
+    """Run main program code."""
     parser = argparse.ArgumentParser(description="Purge files matching patterns from Nextcloud trash bin.")
     parser.add_argument("files", metavar="files", nargs="+", help="One or more INI configuration files to process in order.")
     parser.add_argument("-D", "--dry-run", action="store_true", help="Perform a dry run without deleting files (disables progress bar).")
