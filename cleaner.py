@@ -255,8 +255,8 @@ def main():
             # Print configuration summary
             if args.verbose:
                 print("Purging files matching:")
-                pattern_list = ", ".join(f"{section['pattern']}" for section in patterns)
-                print(f" - File name patterns: {pattern_list}")
+                pattern_list = '", "'.join(f"{section['pattern']}" for section in patterns)
+                print(f' - File name patterns: "{pattern_list}"')
                 if not args.force:
                     print(f" - Maximum threshold of {threshold} files")
                 print(f" - Minimum age of {min_age} days")
