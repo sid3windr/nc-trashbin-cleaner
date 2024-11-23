@@ -207,8 +207,7 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
             print(f"Dry run - not deleting {item['filename']}")
 
 def main():
-    global args
-
+    """"Runs main program code"""
     parser = argparse.ArgumentParser(description="Purge files matching patterns from Nextcloud trash bin.")
     parser.add_argument("files", metavar="files", nargs="+", help="One or more INI configuration files to process in order.")
     parser.add_argument("-D", "--dry-run", action="store_true", help="Perform a dry run without deleting files (disables progress bar).")
