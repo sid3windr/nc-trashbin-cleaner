@@ -42,13 +42,13 @@ def construct_trashbin_url(base_url, username):
     return f"{base_url}/remote.php/dav/trashbin/{username}/trash"
 
 
-def list_trashbin(trashbin_url, username, password):
+def list_trashbin(trashbin_url, username, password, depth):
     """
     Fetch the list of items in the Nextcloud trash bin using WebDAV.
 
     Returns a list of dictionaries with file details including synthesized filename.
     """
-    response = requests.request("PROPFIND", trashbin_url, auth=(username, password), headers={"Depth": "1"})
+    response = requests.request("PROPFIND", trashbin_url, auth=(username, password), headers={"Depth": str(depth)})
     if response.status_code != 207:
         print(f"Failed to list trashbin: {response.status_code}, {response.text}")
         return []
@@ -110,7 +110,7 @@ def delete_item(base_url, href, username, password):
     return (response.status_code == 204, response.status_code, response.text)
 
 
-def purge_files(base_url, username, password, patterns, default_min_age, threshold, dry_run, force, verbose, progress):
+def purge_files(base_url, username, password, patterns, default_min_age, threshold, dry_run, force, verbose, progress, depth):
     """
     Delete files from the trash bin matching any of the specified patterns.
 
@@ -150,7 +150,7 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
     if verbose >= 2:
         print(f"Constructed trashbin URL: {trashbin_url}")
 
-    items = list_trashbin(trashbin_url, username, password)
+    items = list_trashbin(trashbin_url, username, password, depth)
     if not items:
         print("Trashbin is empty or failed to retrieve contents.")
         return
@@ -224,10 +224,11 @@ def main():
     """Run main program code."""
     parser = argparse.ArgumentParser(description="Purge files matching patterns from Nextcloud trash bin.")
     parser.add_argument("files", metavar="files", nargs="+", help="One or more INI configuration files to process in order.")
-    parser.add_argument("-D", "--dry-run", action="store_true", help="Perform a dry run without deleting files (disables progress bar).")
+    parser.add_argument("-N", "--dry-run", action="store_true", help="Perform a dry run without deleting files (disables progress bar).")
     parser.add_argument("-F", "--force", action="store_true", help="Force deletion even when amount of files is over threshold.")
     parser.add_argument("-v", "--verbose", action="count", help="Enable verbose output.", default=0)
     parser.add_argument("-C", "--progress", action="store_true", help="Show progress bar (disables verbose output).")
+    parser.add_argument("-D", "--depth", type=int, help="Amount of subdirectory levels to search through. Defaults to 1 (only files directly in the trashbin)", default=1)
 
     args = parser.parse_args()
 
@@ -275,7 +276,7 @@ def main():
                 print(f" - Minimum age of {min_age} days")
 
             # Purge the files matching the requirements
-            purge_files(base_url, username, password, patterns, min_age, threshold, args.dry_run, args.force, args.verbose, args.progress)
+            purge_files(base_url, username, password, patterns, min_age, threshold, args.dry_run, args.force, args.verbose, args.progress, args.depth)
 
         except Exception as e:
             print(f"Error processing {config_file}: {e}")

@@ -66,7 +66,7 @@ more verbosity.
 Show a nice progress bar (if `tqdm` is available) instead of other output,
 showing amount of files deleted, total, and a completion time estimate.
 
-### `-D` (`--dry-run`)
+### `-N` (`--dry-run`)
 
 Go through the entire process, but don't actually delete the files. Will
 disable the progress bar.
@@ -77,6 +77,12 @@ Ignore the threshold configured in the INI file. Under normal circumstances,
 you would configure a failsafe in case the program would delete too many files
 (i.e. you made a mistake in your regex). Use this switch to run regardless
 of the amount. Probably useful on your first run!
+
+### `-D` (`--depth`)
+
+Determines how many levels of directories deep the script will search inside
+the trashbin (as entire directories can be deleted, and stored as such
+within the trashbin). Defaults to 1, only files deleted by themselves.
 
 ## Caveats
 
