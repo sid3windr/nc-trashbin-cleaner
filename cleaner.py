@@ -222,13 +222,14 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
 
 def main():
     """Run main program code."""
-    parser = argparse.ArgumentParser(description="Purge files matching patterns from Nextcloud trash bin.")
+    parser = argparse.ArgumentParser(description="Purge files matching patterns from Nextcloud trash bin.", add_help=False)
     parser.add_argument("files", metavar="files", nargs="+", help="One or more INI configuration files to process in order.")
+    parser.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS, help='Show this help message and exit.')
     parser.add_argument("-N", "--dry-run", action="store_true", help="Perform a dry run without deleting files (disables progress bar).")
     parser.add_argument("-F", "--force", action="store_true", help="Force deletion even when amount of files is over threshold.")
     parser.add_argument("-v", "--verbose", action="count", help="Enable verbose output.", default=0)
     parser.add_argument("-C", "--progress", action="store_true", help="Show progress bar (disables verbose output).")
-    parser.add_argument("-D", "--depth", type=int, help="Amount of subdirectory levels to search through. Defaults to 1 (only files directly in the trashbin)", default=1)
+    parser.add_argument("-D", "--depth", type=int, help="Amount of subdirectory levels to search through. Defaults to 1 (only files directly in the trashbin).", default=1)
 
     args = parser.parse_args()
 
