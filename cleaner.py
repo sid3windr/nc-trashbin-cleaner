@@ -74,10 +74,12 @@ def list_trashbin(trashbin_url, username, password):
         # Add href to properties
         properties['href'] = href
 
-        # Derive filename from href and add to properties
-        properties['filename'] = unquote(href.split("/")[-1])
-
+        # Derive filename from href and add to properties (remove trailing slash for folders)
+        properties['filename'] = unquote(href.rstrip("/").split("/")[-1])
         # Parse the getlastmodified date to calculate the age in days
+        # Files in the trashbin root end in .d<unixtime> which is the deletion timestamp, but lastmodified
+        # is exactly the same value so we can ignore it. It's not present on files in subfolders so not reliable
+        # as an 'deletion age' determination.
         if 'getlastmodified' in properties and properties['getlastmodified']:
             try:
                 # Parse the last modified timestamp
