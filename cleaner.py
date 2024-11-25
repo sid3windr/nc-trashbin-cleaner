@@ -180,8 +180,11 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
 
     # Flatten section-separated dict of matching items into a single list
     matching_items = [item for sublist in matching_section_items.values() for item in sublist]
-    if verbose:
+    if verbose or not len(matching_items):
         print(f"{len(matching_items)} items match the configured patterns.")
+
+    if not len(matching_items):
+        return
 
     if not force and len(matching_items) > threshold:
         print(f"Threshold of {threshold} exceeded. Aborting operation.")
