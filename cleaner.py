@@ -180,17 +180,20 @@ def purge_files(base_url, username, password, patterns, default_min_age, thresho
 
     # Flatten section-separated dict of matching items into a single list
     matching_items = [item for sublist in matching_section_items.values() for item in sublist]
-    if verbose:
-        print(f"{len(matching_items)} items match the configured patterns.")
 
-    if not len(matching_items):
-        return
-
+    # Bail out if we are over the threshold, unless forced to continue
     if not force and len(matching_items) > threshold:
-        print(f"Threshold of {threshold} exceeded. Aborting operation.")
+        print(f"Threshold of {threshold} files exceeded ({len(matching_items)} files to be deleted). Aborting operation.")
         print("Files that would be deleted:")
         for item in matching_items:
             print(f"- {item['filename']}")
+        return
+
+    if verbose:
+        print(f"{len(matching_items)} items match the configured patterns.")
+
+    # If nothing to do, bail out early
+    if not len(matching_items):
         return
 
     # Convert list to tqdm if requested (can't combine with dry run)
