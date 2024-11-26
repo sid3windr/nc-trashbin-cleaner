@@ -26,6 +26,7 @@ the script is run.
 [Nextcloud]
 ; Base URL of the Nextcloud instance
 url = https://nextcloud.example.com
+; Nextcloud username
 username =
 ; App password
 password =
@@ -87,9 +88,9 @@ within the trashbin). Defaults to 1, only files deleted by themselves.
 ## Caveats
 
 WebDAV can be very slow. There are numerous bugs filed at Nextcloud, many to
-do with the amount of authentication tokens, but with mine all cleaned up,
-it still takes 4-7 seconds for a WebDAV delete to go through, which is
-possibly related to the amount of files in my trashbin. Your initial script
+do with the amount of authentication tokens. In my case, WebDAV deletion
+still took 4-7 seconds until the amount of files in my trashbin got below
+25,000 after which WebDAV calls took 1.5 seconds per file. Your initial script
 run may take hours, depending on how many files need to be cleaned up.
 
 ## Development
